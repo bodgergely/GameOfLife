@@ -1,2 +1,2 @@
 ./build.sh
-./gameoflife
+../build/gameoflife
