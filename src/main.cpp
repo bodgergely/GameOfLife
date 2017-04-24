@@ -14,7 +14,6 @@
 #include "Model.h"
 
 
-
 class GameOfLife
 {
 public:
@@ -26,7 +25,10 @@ public:
 	}
 	void play()
 	{
-		_view->loop();
+		_model->startThread();
+		_view->startThread();
+		_model->join();
+		_view->join();
 	}
 private:
 	Controller* 	_controller{NULL};
@@ -42,7 +44,7 @@ int main()
 {
 	int cols = 1920;
 	int rows = 1080;
-	Configuration config(cols, rows, cols*rows/7);
+	Configuration config(cols, rows, cols*rows/40);
 	GameOfLife gof(cols, rows, config, "GameOfLife");
 	gof.play();
 }
