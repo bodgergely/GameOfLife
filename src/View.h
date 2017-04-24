@@ -1,7 +1,7 @@
 #pragma once
 
 #include <SFML/Graphics.hpp>
-#include "Controller.h"
+#include "Model.h"
 #include "Observer.h"
 #include <vector>
 #include <iostream>
@@ -12,10 +12,10 @@ using std::vector;
 using std::cout;
 using std::endl;
 
-class View : public Thread
+class View
 {
 public:
-	View(Controller& controller, int col, int row, const char* name) : _controller(controller), _col(col), _row(row), _name(name), _window(NULL)
+	View(Model& model, int col, int row, const char* name) : _model(model), _col(col), _row(row), _name(name), _window(NULL)
 	{
 	}
 
@@ -28,21 +28,15 @@ public:
 		}
 	}
 	*/
-	virtual void startThread()
-	{
-		_thread = std::thread(&View::loop, this);
-	}
-
-private:
 	void loop()
 	{
 		 // Start the game loop
 		_window = new sf::RenderWindow(sf::VideoMode(_col, _row), _name);
-		// Clear screen
-		_window->clear();
+		unsigned long long iters = 0;
 		while (_window->isOpen())
 		{
 			// Process events
+			_window->clear();
 			sf::Event event;
 			while (_window->pollEvent(event))
 			{
@@ -51,15 +45,22 @@ private:
 					_window->close();
 			}
 			sf::VertexArray va;
-			vector<Point> points = _controller.get();
-			for(const Point& p : points)
+			const Tile& tile = _model.get();
+
+			for(int r=0;r<_row;r++)
 			{
-				sf::Vector2f coord( p.col,  p.row);
-				if(p.on)
-					va.append(sf::Vertex(coord, sf::Color::Yellow));
-				else
-					va.append(sf::Vertex(coord, sf::Color::Black));
+				for(int c=0;c<_col;c++)
+				{
+					sf::Vector2f coord(c, r);
+					if(tile.isSet(r,c))
+						va.append(sf::Vertex(coord, sf::Color::Yellow));
+					else
+						va.append(sf::Vertex(coord, sf::Color::Black));
+
+				}
+
 			}
+
 
 			// Draw the point (sf::Vertex)
 			_window->draw(va);
@@ -67,11 +68,12 @@ private:
 
 			// Update the window
 			_window->display();
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 		}
 	}
 private:
-	Controller&		 _controller;
+	Model&		 _model;
 	int				 _col;
 	int				 _row;
 	const char*		 _name;

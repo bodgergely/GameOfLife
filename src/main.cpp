@@ -19,16 +19,12 @@ class GameOfLife
 public:
 	GameOfLife(int col, int row, Configuration& config, const char* name) : _col(col), _row(row), _name(name)
 	{
-		_controller = new Controller(_col, _row);
-		_model = new Model(*_controller, _col, _row, config);
-		_view = new View(*_controller, _col, _row, name);
+		_model = new Model(_col, _row, config);
+		_view = new View(*_model, _col, _row, name);
 	}
 	void play()
 	{
-		_model->startThread();
-		_view->startThread();
-		_model->join();
-		_view->join();
+		_view->loop();
 	}
 private:
 	Controller* 	_controller{NULL};
@@ -42,9 +38,9 @@ private:
 
 int main()
 {
-	int cols = 1920;
-	int rows = 1080;
-	Configuration config(cols, rows, cols*rows/40);
+	int cols = 520;
+	int rows = 460;
+	Configuration config(cols, rows, cols*rows/4000);
 	GameOfLife gof(cols, rows, config, "GameOfLife");
 	gof.play();
 }

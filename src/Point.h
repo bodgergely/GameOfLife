@@ -7,10 +7,9 @@
 
 struct Point
 {
-	Point(int r, int c, bool on_=false) : row(r), col(c), on(on_) {}
+	Point(int r, int c) : row(r), col(c){}
 	int row;
 	int col;
-	bool on;
 };
 
 inline bool operator == (const Point& lhs, const Point& rhs)
@@ -25,6 +24,6 @@ struct PointHash
 {
 	size_t operator() (const Point& p) const
 	{
-		return p.row* p.col;
+		return p.row * p.col;
 	}
 };

@@ -89,40 +89,19 @@ public:
 	{
 		_elems = new char[col*row];
 		memset(_elems, 0, col*row);
-		_updated = new bool[col * row];
-		memset(_updated, 0, col*row);
 	}
 	~Tile(){ delete[] _elems; }
 
 	inline void  set(int r, int c)
 	{
 		_elems[r*_cols + c] = 1;
-		_updated[r*_cols + c] = true;
 	}
 	inline void  clear(int r, int c)
 	{
 		_elems[r*_cols + c] = 0;
-		_updated[r*_cols + c] = true;
 	}
-	inline bool  isSet(int r, int c) { return _elems[r*_cols + c];}
+	inline bool  isSet(int r, int c) const { return _elems[r*_cols + c];}
 
-	vector<Point> updates() const
-	{
-		vector<Point> points;
-		for(int i=0;i<_rows;i++)
-		{
-			for(int j=0;j<_cols;j++)
-			{
-				if(_updated[pos(i,j)])
-				{
-					bool live = _elems[pos(i, j)];
-					points.push_back(Point(i, j, live));
-				}
-			}
-		}
-		memset(_updated, 0, _cols*_rows);
-		return points;
-	}
 
 private:
 	int pos(int r, int c) const { return r*_cols + c; }
@@ -130,7 +109,6 @@ private:
 	int	  _rows;
 	int	  _cols;
 	char* _elems {NULL};
-	bool* _updated {NULL};
 };
 
 
@@ -142,10 +120,10 @@ private:
 	Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
  */
 
-class Model : public Thread
+class Model
 {
 public:
-	Model(Controller& controller, int col, int row, Configuration config) : _controller(controller), _col(col), _row(row), _tile(col, row)
+	Model(int col, int row, Configuration config) : _col(col), _row(row), _tile(col, row)
 	{
 		vector<Point>& preconfig = config.points();
 		for(Point& p : preconfig)
@@ -155,22 +133,13 @@ public:
 	}
 
 
-	virtual void startThread()
+	const Tile& get()
 	{
-		_thread = std::thread(&Model::loop, this);
+		updateTile();
+		return _tile;
 	}
 
 private:
-	void loop()
-	{
-		std::this_thread::sleep_for(std::chrono::milliseconds(500));
-		while(true)
-		{
-			updateTile();
-			updateController();
-			std::this_thread::sleep_for(std::chrono::milliseconds(10));
-		}
-	}
 
 	void updateTile()
 	{
@@ -179,11 +148,11 @@ private:
 			for(int c=0;c<_col;c++)
 			{
 				int l = liveNeighborCount(r,c);
-				if(_tile.isSet(r,c) && (l < 2 || l >3) )
+				if(_tile.isSet(r,c) && (l < 2 || l > 3) )
 				{
 					_tile.clear(r,c);
 				}
-				else if(l == 3)
+				else if(!(_tile.isSet(r,c)) && l == 3)
 				{
 					_tile.set(r, c);
 				}
@@ -204,6 +173,8 @@ private:
 			{
 				if((col == 0 && c == 0) || (col == _col-1 && c == _col-1) )
 					continue;
+				if(r == row && c == col)
+					continue;
 				if(_tile.isSet(r,c))
 					++l;
 			}
@@ -213,13 +184,7 @@ private:
 
 	}
 
-	void updateController()
-	{
-		_controller.update(_tile.updates());
-	}
-
 private:
-	Controller& _controller;
 	int			_col;
 	int			_row;
 	Tile		_tile;
